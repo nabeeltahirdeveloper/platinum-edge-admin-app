@@ -10,6 +10,8 @@ import UserDetailsModal from '../components/admin/UserDetailsModal';
 import KYCReviewModal from '../components/admin/KYCReviewModal';
 import NotificationBar from '../components/admin/NotificationBar';
 import AdvancedFilters from '../components/admin/AdvancedFilters';
+import authAPI from '@/apiBridge/auth';
+import usersAPI from '@/apiBridge/users';
 
 export default function AdminPanel() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -43,43 +45,51 @@ export default function AdminPanel() {
 
   const checkAdminAccess = async () => {
     try {
-      // Mock admin check - replace with your actual auth implementation
-      const user = {
-        role: 'admin',
-        full_name: 'Admin User',
-        email: 'admin@platinum-edge.ca'
-      };
-      if (user.role !== 'admin') {
+      const response = await authAPI.checkAdminAccess({});
+      const user = response.data;
+      
+      if (!user || user.role !== 'admin') {
         window.location.href = '/Login';
         return;
       }
       setCurrentUser(user);
       setIsLoading(false);
     } catch (error) {
-      window.location.href = '/Login';
+      console.error('Error checking admin access:', error);
+      // If authentication fails, redirect to login
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        window.location.href = '/Login';
+      } else {
+        // For other errors, still set loading to false to show error state
+        setIsLoading(false);
+      }
     }
   };
 
   const loadUsers = async () => {
     try {
-      // Mock user list - replace with your actual API call
-      const userList = [];
+      const response = await usersAPI.getUsers({});
+      const userList = response.data?.users || response.data || [];
       setUsers(userList);
     } catch (error) {
       console.error('Error loading users:', error);
+      // Set empty array on error to prevent UI issues
+      setUsers([]);
     }
   };
 
   const updateUser = async (id, data) => {
     try {
-      // Mock update - replace with your actual API call
-      console.log('Update user:', id, data);
-      // Update local state
+      await usersAPI.updateUser({ userId: id, ...data });
+      // Update local state after successful API call
       setUsers(prevUsers => 
         prevUsers.map(user => user.id === id ? { ...user, ...data } : user)
       );
+      // Reload users to ensure data consistency
+      await loadUsers();
     } catch (error) {
       console.error('Error updating user:', error);
+      throw error; // Re-throw to allow caller to handle
     }
   };
 

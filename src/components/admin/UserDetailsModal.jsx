@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
 import ServiceManagement from './ServiceManagement';
+import usersAPI from '@/apiBridge/users';
 
 export default function UserDetailsModal({ user, onClose, onUserUpdate }) {
   const [localUser, setLocalUser] = useState(user);
@@ -193,40 +194,55 @@ export default function UserDetailsModal({ user, onClose, onUserUpdate }) {
   };
 
   const handleUpdateServices = async (updateData) => {
-    // Mock update - replace with your actual API call
-    console.log('Update services:', localUser.id, updateData);
-    const updatedUser = { ...localUser, ...updateData };
-    setLocalUser(updatedUser);
-    if (onUserUpdate) onUserUpdate(updatedUser);
+    try {
+      await usersAPI.updateUserServices({ userId: localUser.id, ...updateData });
+      const updatedUser = { ...localUser, ...updateData };
+      setLocalUser(updatedUser);
+      if (onUserUpdate) onUserUpdate(updatedUser);
+    } catch (error) {
+      console.error('Error updating services:', error);
+      // Optionally show error message to user
+      alert('Failed to update services. Please try again.');
+    }
   };
 
   const handleSaveNotes = async () => {
     setSaving(true);
     try {
-      // Mock update - replace with your actual API call
-      console.log('Save notes:', localUser.id, notes);
+      await usersAPI.updateUserNotes({ userId: localUser.id, notes });
       const updatedUser = { ...localUser, notes };
       setLocalUser(updatedUser);
       if (onUserUpdate) onUserUpdate(updatedUser);
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      alert('Failed to save notes. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleUpdateAccountStatus = async (newStatus) => {
-    // Mock update - replace with your actual API call
-    console.log('Update account status:', localUser.id, newStatus);
-    const updatedUser = { ...localUser, account_status: newStatus };
-    setLocalUser(updatedUser);
-    if (onUserUpdate) onUserUpdate(updatedUser);
+    try {
+      await usersAPI.updateUserAccountStatus({ userId: localUser.id, account_status: newStatus });
+      const updatedUser = { ...localUser, account_status: newStatus };
+      setLocalUser(updatedUser);
+      if (onUserUpdate) onUserUpdate(updatedUser);
+    } catch (error) {
+      console.error('Error updating account status:', error);
+      alert('Failed to update account status. Please try again.');
+    }
   };
 
   const handleUpdateKYCStatus = async (newStatus) => {
-    // Mock update - replace with your actual API call
-    console.log('Update KYC status:', localUser.id, newStatus);
-    const updatedUser = { ...localUser, kyc_status: newStatus };
-    setLocalUser(updatedUser);
-    if (onUserUpdate) onUserUpdate(updatedUser);
+    try {
+      await usersAPI.updateUserKYCStatus({ userId: localUser.id, kyc_status: newStatus });
+      const updatedUser = { ...localUser, kyc_status: newStatus };
+      setLocalUser(updatedUser);
+      if (onUserUpdate) onUserUpdate(updatedUser);
+    } catch (error) {
+      console.error('Error updating KYC status:', error);
+      alert('Failed to update KYC status. Please try again.');
+    }
   };
 
   return (
