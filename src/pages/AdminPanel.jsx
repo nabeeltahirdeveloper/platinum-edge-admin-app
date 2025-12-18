@@ -10,7 +10,7 @@ import UserDetailsModal from '../components/admin/UserDetailsModal';
 import KYCReviewModal from '../components/admin/KYCReviewModal';
 import NotificationBar from '../components/admin/NotificationBar';
 import AdvancedFilters from '../components/admin/AdvancedFilters';
-import adminAPI from '@/apiBridge/admin';
+import authAPI from '@/apiBridge/auth';
 import usersAPI from '@/apiBridge/users';
 
 export default function AdminPanel() {
@@ -45,41 +45,15 @@ export default function AdminPanel() {
 
   const checkAdminAccess = async () => {
     try {
-      // First check if admin token exists in localStorage
-      const adminToken = localStorage.getItem('adminAccessToken');
-      const adminUserStr = localStorage.getItem('adminUser');
+      const response = await authAPI.checkAdminAccess({});
+      const user = response.data;
       
-      if (!adminToken || !adminUserStr) {
+      if (!user || user.role !== 'admin') {
         window.location.href = '/Login';
         return;
       }
-
-      // Load user from localStorage immediately to avoid loading state
-      try {
-        const adminUser = JSON.parse(adminUserStr);
-        setCurrentUser({
-          ...adminUser,
-          full_name: adminUser.name || adminUser.full_name
-        });
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error parsing admin user:', error);
-        window.location.href = '/Login';
-        return;
-      }
-
-      // Optionally verify token with backend (non-blocking)
-      try {
-        await adminAPI.checkAdminAccess({});
-      } catch (error) {
-        // If verification fails, clear tokens and redirect
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          localStorage.removeItem('adminAccessToken');
-          localStorage.removeItem('adminRefreshToken');
-          localStorage.removeItem('adminUser');
-          window.location.href = '/Login';
-        }
-      }
+      setCurrentUser(user);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error checking admin access:', error);
       // If authentication fails, redirect to login
