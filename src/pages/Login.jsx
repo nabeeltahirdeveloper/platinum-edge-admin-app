@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Mail, Lock, ArrowRight, Shield, Zap, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createPageUrl } from '../utils';
+import adminAPI from '@/apiBridge/admin';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,12 +18,25 @@ export default function Login() {
     setLoading(true);
     setError('');
 
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    if (email === 'demo@platinum-edge.ca' && password === 'demo123!') {
-      window.location.href = createPageUrl('AdminPanel');
-    } else {
-      setError('Invalid credentials. Use demo@platinum-edge.ca / demo123!');
+    try {
+      const response = await adminAPI.login({ email, password });
+      
+      if (response.data?.success && response.data?.data) {
+        // Store tokens with admin prefix to avoid conflicts
+        localStorage.setItem('adminAccessToken', response.data.data.accessToken);
+        localStorage.setItem('adminRefreshToken', response.data.data.refreshToken);
+        localStorage.setItem('adminUser', JSON.stringify(response.data.data.user));
+        
+        // Redirect to admin panel
+        window.location.href = createPageUrl('AdminPanel');
+      } else {
+        setError('Login failed. Please check your credentials.');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message || 'Invalid credentials. Please try again.';
+      setError(errorMessage);
       setLoading(false);
     }
   };

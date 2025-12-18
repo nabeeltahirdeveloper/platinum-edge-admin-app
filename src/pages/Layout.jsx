@@ -3,22 +3,47 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Home, User, Shield, LogOut, Sparkles } from 'lucide-react';
+import adminAPI from '@/apiBridge/admin';
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = React.useState(null);
 
   React.useEffect(() => {
-    // Mock user data - replace with your actual auth implementation
-    setUser({
-      full_name: 'Demo User',
-      email: 'demo@platinum-edge.ca',
-      kyc_status: 'pending'
-    });
+    // Load admin user from localStorage
+    const adminUserStr = localStorage.getItem('adminUser');
+    if (adminUserStr) {
+      try {
+        const adminUser = JSON.parse(adminUserStr);
+        setUser({
+          full_name: adminUser.name || adminUser.full_name,
+          email: adminUser.email,
+          role: adminUser.role
+        });
+      } catch (error) {
+        console.error('Error parsing admin user:', error);
+      }
+    }
   }, []);
 
-  const handleLogout = () => {
-    // Mock logout - replace with your actual logout implementation
-    window.location.href = createPageUrl('Login');
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('adminRefreshToken');
+      if (refreshToken) {
+        // Call logout API
+        await adminAPI.logout({ refreshToken });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Continue with logout even if API call fails
+    } finally {
+      // Clear admin tokens and user data
+      localStorage.removeItem('adminAccessToken');
+      localStorage.removeItem('adminRefreshToken');
+      localStorage.removeItem('adminUser');
+      
+      // Redirect to login
+      window.location.href = createPageUrl('Login');
+    }
   };
 
   const navLinks = [
