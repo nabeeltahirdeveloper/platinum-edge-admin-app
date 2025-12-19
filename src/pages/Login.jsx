@@ -20,6 +20,13 @@ export default function Login() {
     await new Promise(resolve => setTimeout(resolve, 800));
 
     if (email === 'demo@platinum-edge.ca' && password === 'demo123!') {
+      // Store demo token for authentication
+      localStorage.setItem('token', 'demo-token-' + Date.now());
+      localStorage.setItem('demoUser', JSON.stringify({
+        email: 'demo@platinum-edge.ca',
+        role: 'admin',
+        full_name: 'Demo Admin User'
+      }));
       window.location.href = createPageUrl('AdminPanel');
     } else {
       setError('Invalid credentials. Use demo@platinum-edge.ca / demo123!');
