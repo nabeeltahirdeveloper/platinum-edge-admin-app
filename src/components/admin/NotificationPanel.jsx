@@ -3,7 +3,6 @@ import { Bell, X, CheckCircle, AlertTriangle, Shield, DollarSign, MessageSquare,
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
-import notificationsAPI from '@/apiBridge/notifications';
 
 export default function NotificationPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,65 +12,32 @@ export default function NotificationPanel() {
 
   useEffect(() => {
     loadNotifications();
-    // Refresh every 10 seconds
-    const interval = setInterval(loadNotifications, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   const loadNotifications = async () => {
-    try {
-      const response = await notificationsAPI.getNotifications({});
-      const notificationList = response.data?.notifications || response.data || [];
-      setNotifications(notificationList);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-      // Set empty array on error to prevent UI issues
-      setNotifications([]);
-    }
+    // Mock - empty notifications for design only
+    setNotifications([]);
   };
 
   const markAsRead = async (id) => {
-    try {
-      await notificationsAPI.markNotificationRead({ notificationId: id });
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      // Still update UI optimistically
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
-    }
+    // Mock - just update local state
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
   };
 
   const markAllAsRead = async () => {
     setIsMarkingAll(true);
-    try {
-      await notificationsAPI.markAllNotificationsRead({});
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-      // Still update UI optimistically
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-    } finally {
-      setIsMarkingAll(false);
-    }
+    // Mock - just update local state
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, read: true }))
+    );
+    setIsMarkingAll(false);
   };
 
   const deleteNotification = async (id) => {
-    try {
-      await notificationsAPI.deleteNotification({ notificationId: id });
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      // Still update UI optimistically
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }
+    // Mock - just update local state
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   const notificationIcons = {

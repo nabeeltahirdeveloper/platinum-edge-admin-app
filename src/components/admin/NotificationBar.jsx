@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Bell, X, ChevronDown, ChevronUp, AlertTriangle, Shield, DollarSign, MessageSquare, CheckCircle, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import notificationsAPI from '@/apiBridge/notifications';
 
 export default function NotificationBar() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -11,54 +10,27 @@ export default function NotificationBar() {
 
   useEffect(() => {
     loadNotifications();
-    // Refresh every 10 seconds
-    const interval = setInterval(loadNotifications, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   const loadNotifications = async () => {
-    try {
-      const response = await notificationsAPI.getNotifications({});
-      const notificationList = response.data?.notifications || response.data || [];
-      setNotifications(notificationList);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-      // Set empty array on error to prevent UI issues
-      setNotifications([]);
-    }
+    // Mock - empty notifications for design only
+    setNotifications([]);
   };
 
   const markAsRead = async (id) => {
-    try {
-      await notificationsAPI.markNotificationRead({ notificationId: id });
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      // Still update UI optimistically
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
-    }
+    // Mock - just update local state
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
   };
 
   const dismissAll = async () => {
     setIsDismissing(true);
-    try {
-      await notificationsAPI.markAllNotificationsRead({});
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-    } catch (error) {
-      console.error('Error dismissing notifications:', error);
-      // Still update UI optimistically
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-    } finally {
-      setIsDismissing(false);
-    }
+    // Mock - just update local state
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, read: true }))
+    );
+    setIsDismissing(false);
   };
 
   const unreadNotifications = notifications.filter(n => !n.read);

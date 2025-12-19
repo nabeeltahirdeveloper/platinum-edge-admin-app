@@ -3,22 +3,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Home, User, Shield, LogOut, Sparkles } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Layout({ children, currentPageName }) {
-  const [user, setUser] = React.useState(null);
+  const { user, logout } = useAuth();
 
-  React.useEffect(() => {
-    // Mock user data - replace with your actual auth implementation
-    setUser({
-      full_name: 'Demo User',
-      email: 'demo@platinum-edge.ca',
-      kyc_status: 'pending'
-    });
-  }, []);
-
-  const handleLogout = () => {
-    // Mock logout - replace with your actual logout implementation
-    window.location.href = createPageUrl('Login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   const navLinks = [

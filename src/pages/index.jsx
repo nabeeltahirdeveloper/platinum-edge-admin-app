@@ -16,7 +16,9 @@ import Login from "./Login";
 
 import AdminPanel from "./AdminPanel";
 
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import ProtectedRoute from "@/components/ProtectedRoute";
+
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
     
@@ -59,25 +61,84 @@ function PagesContent() {
     return (
         <Layout currentPageName={currentPage}>
             <Routes>            
-                
-                    <Route path="/" element={<AdminPanel />} />
-                
-                
-                <Route path="/AdminPanel" element={<AdminPanel />} />
-                
-                <Route path="/KYCVerification" element={<KYCVerification />} />
-                
-                <Route path="/Profile" element={<Profile />} />
-                
-                <Route path="/FlashCard" element={<FlashCard />} />
-                
-                <Route path="/FlashPay" element={<FlashPay />} />
-                
-                <Route path="/FlashAccount" element={<FlashAccount />} />
-                
-                <Route path="/FlashExchange" element={<FlashExchange />} />
-                
+                {/* Public Route */}
                 <Route path="/Login" element={<Login />} />
+                
+                {/* Protected Admin Routes */}
+                <Route 
+                    path="/" 
+                    element={
+                        <ProtectedRoute>
+                            <AdminPanel />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                <Route 
+                    path="/AdminPanel" 
+                    element={
+                        <ProtectedRoute>
+                            <AdminPanel />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                <Route 
+                    path="/KYCVerification" 
+                    element={
+                        <ProtectedRoute>
+                            <KYCVerification />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                <Route 
+                    path="/Profile" 
+                    element={
+                        <ProtectedRoute>
+                            <Profile />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                <Route 
+                    path="/FlashCard" 
+                    element={
+                        <ProtectedRoute>
+                            <FlashCard />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                <Route 
+                    path="/FlashPay" 
+                    element={
+                        <ProtectedRoute>
+                            <FlashPay />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                <Route 
+                    path="/FlashAccount" 
+                    element={
+                        <ProtectedRoute>
+                            <FlashAccount />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                <Route 
+                    path="/FlashExchange" 
+                    element={
+                        <ProtectedRoute>
+                            <FlashExchange />
+                        </ProtectedRoute>
+                    } 
+                />
+                
+                {/* Catch all - redirect to login */}
+                <Route path="*" element={<Navigate to="/Login" replace />} />
                 
             </Routes>
         </Layout>

@@ -1,36 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Mail, Lock, ArrowRight, Shield, Zap, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { createPageUrl } from '../utils';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      navigate('/AdminPanel');
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    if (email === 'demo@platinum-edge.ca' && password === 'demo123!') {
-      // Store demo token for authentication
-      localStorage.setItem('token', 'demo-token-' + Date.now());
-      localStorage.setItem('demoUser', JSON.stringify({
-        email: 'demo@platinum-edge.ca',
-        role: 'admin',
-        full_name: 'Demo Admin User'
-      }));
-      window.location.href = createPageUrl('AdminPanel');
+    const result = await login(email, password);
+    
+    if (result.success) {
+      // Redirect to admin panel on success
+      navigate('/AdminPanel');
     } else {
-      setError('Invalid credentials. Use demo@platinum-edge.ca / demo123!');
-      setLoading(false);
+      setError(result.error || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -175,10 +176,13 @@ export default function Login() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold h-12 rounded-xl shadow-lg shadow-indigo-500/30 group"
+                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold h-12 rounded-xl shadow-lg shadow-indigo-500/30 group disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  'Signing in...'
+                  <span className="flex items-center justify-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Signing in...
+                  </span>
                 ) : (
                   <>
                     Sign In
