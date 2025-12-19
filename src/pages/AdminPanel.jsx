@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -22,6 +22,7 @@ export default function AdminPanel() {
   const [sortDirection, setSortDirection] = useState('desc');
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const requestCompletedRef = useRef(false);
   
   const [filters, setFilters] = useState({
     searchQuery: '',
@@ -34,7 +35,20 @@ export default function AdminPanel() {
   });
 
   useEffect(() => {
+    // Set a fallback timeout to prevent infinite loading
+    const fallbackTimeout = setTimeout(() => {
+      if (!requestCompletedRef.current) {
+        console.warn('Admin access check timed out, redirecting to login');
+        setIsLoading(false);
+        window.location.href = '/Login';
+      }
+    }, 15000); // 15 seconds fallback
+
     checkAdminAccess();
+
+    return () => {
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   useEffect(() => {
@@ -45,8 +59,24 @@ export default function AdminPanel() {
 
   const checkAdminAccess = async () => {
     try {
+      // Check if this is a demo account first
+      const demoUser = localStorage.getItem('demoUser');
+      const token = localStorage.getItem('token');
+      
+      if (demoUser && token && token.startsWith('demo-token-')) {
+        // Demo account - allow access without API call
+        const user = JSON.parse(demoUser);
+        requestCompletedRef.current = true;
+        setCurrentUser(user);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Real API call for non-demo accounts
       const response = await authAPI.checkAdminAccess({});
       const user = response.data;
+      
+      requestCompletedRef.current = true;
       
       if (!user || user.role !== 'admin') {
         window.location.href = '/Login';
@@ -55,7 +85,34 @@ export default function AdminPanel() {
       setCurrentUser(user);
       setIsLoading(false);
     } catch (error) {
+      requestCompletedRef.current = true;
       console.error('Error checking admin access:', error);
+      
+      // Handle network errors and timeouts
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        console.error('Request timed out');
+        setIsLoading(false);
+        window.location.href = '/Login';
+        return;
+      }
+      
+      // Handle network errors (no response from server)
+      if (!error.response) {
+        console.error('Network error - server may be unreachable');
+        // Check if demo account exists as fallback
+        const demoUser = localStorage.getItem('demoUser');
+        const token = localStorage.getItem('token');
+        if (demoUser && token && token.startsWith('demo-token-')) {
+          const user = JSON.parse(demoUser);
+          setCurrentUser(user);
+          setIsLoading(false);
+          return;
+        }
+        setIsLoading(false);
+        window.location.href = '/Login';
+        return;
+      }
+      
       // If authentication fails, redirect to login
       if (error.response?.status === 401 || error.response?.status === 403) {
         window.location.href = '/Login';

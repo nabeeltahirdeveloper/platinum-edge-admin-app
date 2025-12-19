@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axiosInstance from './axiosConfig';
 
 export default {
     getUsers(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'getUsers',
@@ -13,7 +13,7 @@ export default {
         );
     },
     updateUser(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'updateUser',
@@ -24,7 +24,7 @@ export default {
         );
     },
     updateUserKYCStatus(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'updateUserKYCStatus',
@@ -35,7 +35,7 @@ export default {
         );
     },
     updateUserAccountStatus(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'updateUserAccountStatus',
@@ -46,7 +46,7 @@ export default {
         );
     },
     updateUserServices(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'updateUserServices',
@@ -57,7 +57,7 @@ export default {
         );
     },
     updateUserNotes(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'updateUserNotes',

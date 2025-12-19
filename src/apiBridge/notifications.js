@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axiosInstance from './axiosConfig';
 
 export default {
     getNotifications(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'getNotifications',
@@ -13,7 +13,7 @@ export default {
         );
     },
     markNotificationRead(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'markNotificationRead',
@@ -24,7 +24,7 @@ export default {
         );
     },
     markAllNotificationsRead(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'markAllNotificationsRead',
@@ -35,7 +35,7 @@ export default {
         );
     },
     deleteNotification(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'deleteNotification',

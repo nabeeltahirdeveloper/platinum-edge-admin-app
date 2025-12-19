@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axiosInstance from './axiosConfig';
 
 export default {
     checkAdminAccess(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'checkAdminAccess',
@@ -13,7 +13,7 @@ export default {
         );
     },
     login(args, adv) {
-        return axios.post(
+        return axiosInstance.post(
             import.meta.env.VITE_API_SERVER + '/api/settings/user',
             {
                 action: 'login',
