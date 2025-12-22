@@ -24,7 +24,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex flex-col">
       <style>{`
         :root {
           --primary: #6366f1;
@@ -73,12 +73,12 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-slate-900/30 backdrop-blur-xl mt-20">
+      <footer className="border-t border-white/10 bg-slate-900/30 backdrop-blur-xl mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-slate-400 text-sm">
             <p>© 2024 Platinum Edge. All rights reserved.</p>
