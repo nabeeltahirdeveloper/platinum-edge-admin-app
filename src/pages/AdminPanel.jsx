@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -10,17 +10,25 @@ import UserDetailsModal from '../components/admin/UserDetailsModal';
 import KYCReviewModal from '../components/admin/KYCReviewModal';
 import NotificationBar from '../components/admin/NotificationBar';
 import AdvancedFilters from '../components/admin/AdvancedFilters';
+import { useAuth } from '../contexts/AuthContext';
+import { getUsers as fetchUsers } from '../services/admin';
 
 export default function AdminPanel() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user: currentUser, loading: authLoading } = useAuth();
   const [selectedUser, setSelectedUser] = useState(null);
   const [kycReviewUser, setKycReviewUser] = useState(null);
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const [sortField, setSortField] = useState('created_date');
+  const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const requestCompletedRef = useRef(false);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
   
   const [filters, setFilters] = useState({
     searchQuery: '',
@@ -32,47 +40,113 @@ export default function AdminPanel() {
     notesQuery: ''
   });
 
-  useEffect(() => {
-    // Set a fallback timeout to prevent infinite loading
-    const fallbackTimeout = setTimeout(() => {
-      if (!requestCompletedRef.current) {
-        console.warn('Admin access check timed out, redirecting to login');
-        setIsLoading(false);
-        window.location.href = '/Login';
+  const loadUsers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // Build API params
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        sortBy: sortField === 'created_date' ? 'createdAt' : sortField,
+        sortOrder: sortDirection
+      };
+      
+      if (filters.searchQuery) {
+        params.search = filters.searchQuery;
       }
-    }, 15000); // 15 seconds fallback
-
-    checkAdminAccess();
-
-    return () => {
-      clearTimeout(fallbackTimeout);
-    };
-  }, []);
+      
+      if (filters.kycStatus !== 'all') {
+        params.kyc_status = filters.kycStatus;
+      }
+      
+      if (filters.accountStatus !== 'all') {
+        params.account_status = filters.accountStatus;
+      }
+      
+      const response = await fetchUsers(params);
+      
+      if (response.success) {
+        // Map backend user data to frontend format
+        const mappedUsers = response.users.map(user => ({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          full_name: user.full_name || user.name,
+          phone: user.phone,
+          phoneNumber: user.phone, // For compatibility
+          date_of_birth: user.date_of_birth,
+          occupation: user.occupation,
+          address: user.address,
+          city: user.city,
+          postal_code: user.postal_code,
+          country: user.country,
+          kyc_status: user.kyc_status || 'pending',
+          kyc_submitted_date: user.kyc_submitted_date,
+          account_status: user.account_status || 'active',
+          enabled_services: user.enabled_services,
+          service_access_dates: user.service_access_dates,
+          created_date: user.createdAt,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          // Map enabled_services to accessed_services for compatibility
+          accessed_services: user.enabled_services 
+            ? Object.keys(user.enabled_services).filter(key => user.enabled_services[key])
+            : []
+        }));
+        
+        setUsers(mappedUsers);
+        setTotalUsers(response.total);
+        setPagination(prev => ({
+          ...prev,
+          total: response.pagination.total || 0,
+          totalPages: response.pagination.totalPages || 0
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+      // Show error message to user
+      alert(error.message || 'Failed to load users. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters.searchQuery, filters.kycStatus, filters.accountStatus, pagination.page, pagination.limit, sortField, sortDirection]);
 
   useEffect(() => {
+    if (!authLoading && !currentUser) {
+      // Redirect to login if not authenticated
+      window.location.href = '/Login';
+      return;
+    }
+    
     if (currentUser) {
+      setIsLoading(false);
+    }
+  }, [currentUser, authLoading]);
+
+  // Debounce search query to avoid too many API calls
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const timeoutId = setTimeout(() => {
+      // Reset to page 1 when filters change
+      setPagination(prev => {
+        if (prev.page !== 1) {
+          return { ...prev, page: 1 };
+        }
+        return prev;
+      });
+    }, filters.searchQuery ? 500 : 0); // 500ms delay for search, immediate for other filters
+    
+    return () => clearTimeout(timeoutId);
+  }, [filters.searchQuery, filters.kycStatus, filters.accountStatus, sortField, sortDirection, currentUser]);
+
+  // Load users when pagination or filters change
+  useEffect(() => {
+    if (currentUser && pagination.page > 0) {
       loadUsers();
     }
-  }, [currentUser]);
-
-  const checkAdminAccess = async () => {
-    // Mock admin access check - just set a demo user
-    const mockUser = {
-      id: 'admin-1',
-      email: 'admin@platinum-edge.ca',
-      role: 'admin',
-      full_name: 'Admin User'
-    };
-    
-    requestCompletedRef.current = true;
-    setCurrentUser(mockUser);
-    setIsLoading(false);
-  };
-
-  const loadUsers = async () => {
-    // Mock users data - empty array for design only
-    setUsers([]);
-  };
+  }, [pagination.page, currentUser, loadUsers]);
 
   const updateUser = async (id, data) => {
     // Mock update - just update local state
@@ -86,80 +160,35 @@ export default function AdminPanel() {
     setKycReviewUser(null);
   };
 
+  // Since filtering and sorting is done on the backend, we just use the users directly
+  // But we can still do client-side filtering for services, date range, and notes if needed
   const filteredAndSortedUsers = useMemo(() => {
     let filtered = users.filter(user => {
-      // Search query (name, email, phone)
-      const matchesSearch = !filters.searchQuery || 
-        user.full_name?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        user.phoneNumber?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        user.phone?.toLowerCase().includes(filters.searchQuery.toLowerCase());
-      
-      // KYC Status
-      const matchesKYC = filters.kycStatus === 'all' || user.kyc_status === filters.kycStatus;
-      
-      // Account Status
-      const matchesAccount = filters.accountStatus === 'all' || 
-        (user.account_status || 'active') === filters.accountStatus;
-      
-      // Services
+      // Services filter (client-side since backend doesn't support it yet)
       const matchesServices = filters.services.length === 0 || 
         filters.services.some(service => user.accessed_services?.includes(service));
       
-      // Created Date Range
+      // Created Date Range (client-side)
       const matchesCreatedFrom = !filters.createdFrom || 
-        new Date(user.created_date) >= new Date(filters.createdFrom);
+        new Date(user.createdAt || user.created_date) >= new Date(filters.createdFrom);
       
       const matchesCreatedTo = !filters.createdTo || 
-        new Date(user.created_date) <= new Date(filters.createdTo + 'T23:59:59');
+        new Date(user.createdAt || user.created_date) <= new Date(filters.createdTo + 'T23:59:59');
       
-      // Notes Search
+      // Notes Search (client-side - if notes field exists)
       const matchesNotes = !filters.notesQuery || 
         user.notes?.toLowerCase().includes(filters.notesQuery.toLowerCase());
       
-      return matchesSearch && matchesKYC && matchesAccount && matchesServices && 
-             matchesCreatedFrom && matchesCreatedTo && matchesNotes;
-    });
-
-    // Sorting
-    filtered.sort((a, b) => {
-      let aVal, bVal;
-      
-      switch (sortField) {
-        case 'name':
-          aVal = a.full_name?.toLowerCase() || '';
-          bVal = b.full_name?.toLowerCase() || '';
-          break;
-        case 'email':
-          aVal = a.email?.toLowerCase() || '';
-          bVal = b.email?.toLowerCase() || '';
-          break;
-        case 'kyc_status':
-          aVal = a.kyc_status || '';
-          bVal = b.kyc_status || '';
-          break;
-        case 'created_date':
-          aVal = new Date(a.created_date).getTime();
-          bVal = new Date(b.created_date).getTime();
-          break;
-        case 'services':
-          aVal = a.accessed_services?.length || 0;
-          bVal = b.accessed_services?.length || 0;
-          break;
-        default:
-          return 0;
-      }
-      
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
+      return matchesServices && matchesCreatedFrom && matchesCreatedTo && matchesNotes;
     });
 
     return filtered;
-  }, [users, filters, sortField, sortDirection]);
+  }, [users, filters.services, filters.createdFrom, filters.createdTo, filters.notesQuery]);
 
+  // Calculate stats from all users (we need to fetch all users for stats or get stats from backend)
+  // For now, we'll calculate from current page users, but ideally backend should provide stats endpoint
   const stats = {
-    total: users.length,
+    total: totalUsers || users.length,
     filtered: filteredAndSortedUsers.length,
     verified: users.filter(u => u.kyc_status === 'verified').length,
     pending: users.filter(u => u.kyc_status === 'pending').length,
@@ -168,10 +197,21 @@ export default function AdminPanel() {
   };
 
   const handleSort = (field) => {
-    if (sortField === field) {
+    // Map frontend field names to backend field names
+    const fieldMap = {
+      'name': 'name',
+      'email': 'email',
+      'kyc_status': 'kyc_status',
+      'created_date': 'createdAt',
+      'services': 'createdAt' // Backend doesn't support sorting by services count
+    };
+    
+    const backendField = fieldMap[field] || 'createdAt';
+    
+    if (sortField === backendField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
+      setSortField(backendField);
       setSortDirection('asc');
     }
   };
@@ -202,7 +242,7 @@ export default function AdminPanel() {
     'FlashExchange': ArrowLeftRight
   };
 
-  if (isLoading || !currentUser) {
+  if (authLoading || isLoading || !currentUser) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
@@ -291,11 +331,36 @@ export default function AdminPanel() {
       />
 
       {/* Results Summary */}
-      {filteredAndSortedUsers.length !== users.length && (
-        <div className="mb-4 text-slate-400 text-sm">
-          Showing {filteredAndSortedUsers.length} of {users.length} users
+      <div className="mb-4 flex items-center justify-between">
+        <div className="text-slate-400 text-sm">
+          Showing {filteredAndSortedUsers.length} of {totalUsers} total users
+          {pagination.totalPages > 1 && (
+            <span className="ml-2">
+              (Page {pagination.page} of {pagination.totalPages})
+            </span>
+          )}
         </div>
-      )}
+        {pagination.totalPages > 1 && (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+              disabled={pagination.page === 1}
+              className="bg-slate-800/50 border border-white/10 text-white hover:bg-slate-700"
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+              disabled={pagination.page >= pagination.totalPages}
+              className="bg-slate-800/50 border border-white/10 text-white hover:bg-slate-700"
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Users Table */}
       <div className="bg-slate-900/50 border border-white/10 rounded-xl backdrop-blur-xl overflow-hidden">
@@ -345,7 +410,7 @@ export default function AdminPanel() {
                 >
                   <div className="flex items-center gap-2">
                     Joined
-                    <ArrowUpDown className={`w-4 h-4 ${sortField === 'created_date' ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
+                    <ArrowUpDown className={`w-4 h-4 ${sortField === 'createdAt' ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
                   </div>
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-slate-300">Actions</th>
@@ -398,7 +463,7 @@ export default function AdminPanel() {
                     </td>
                     <td className="p-4">
                       <p className="text-slate-300 text-sm">
-                        {new Date(user.created_date).toLocaleDateString()}
+                        {new Date(user.createdAt || user.created_date).toLocaleDateString()}
                       </p>
                     </td>
                     <td className="p-4">
