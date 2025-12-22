@@ -41,7 +41,7 @@ export const adminLogin = async (email, password) => {
 /**
  * Verify Admin Token
  * Validates the current token and returns user data
- * For now, returns stored user if token exists (backend doesn't have a verify endpoint)
+ * Calls the backend profile endpoint to verify token and get user data
  * @returns {Promise<Object>} User data
  */
 export const verifyAdminToken = async () => {
@@ -51,13 +51,16 @@ export const verifyAdminToken = async () => {
       throw new Error('No token found');
     }
     
-    // Return stored user data if available
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      return { user: storedUser };
+    // Call backend to verify token and get user profile
+    const response = await apiClient.get('/users/profile');
+    const userData = response.data.data || response.data;
+    
+    // Update stored user data
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+      return { user: userData };
     }
     
-    // If no stored user, throw error to trigger re-login
     throw new Error('No user data found');
   } catch (error) {
     // If verification fails, clear stored data
@@ -70,15 +73,21 @@ export const verifyAdminToken = async () => {
 
 /**
  * Get Current Admin User
- * Returns stored user data (backend profile endpoint requires specific action type)
+ * Fetches current user profile from backend
  * @returns {Promise<Object>} Current admin user data
  */
 export const getCurrentAdmin = async () => {
   try {
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      return { user: storedUser };
+    // Call backend to get current user profile
+    const response = await apiClient.get('/users/profile');
+    const userData = response.data.data || response.data;
+    
+    // Update stored user data
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+      return { user: userData };
     }
+    
     throw new Error('No user data found');
   } catch (error) {
     throw error;
