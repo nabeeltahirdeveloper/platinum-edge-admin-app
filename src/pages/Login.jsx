@@ -34,12 +34,6 @@ export default function Login() {
       setError(result.error || 'Login failed. Please check your credentials.');
     }
   };
-
-  const handleDemoLogin = () => {
-    setEmail('demo@platinum-edge.ca');
-    setPassword('demo123!');
-  };
-
   const features = [
     { icon: Shield, text: 'Bank-level encryption' },
     { icon: Zap, text: 'Instant access' },
@@ -191,28 +185,7 @@ export default function Login() {
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 pt-6 border-t border-white/10">
-              <button
-                onClick={handleDemoLogin}
-                className="w-full text-center text-sm text-slate-400 hover:text-indigo-400 transition-colors"
-              >
-                Try Demo Account →
-              </button>
-            </div>
           </div>
-
-          {/* Demo Credentials Card */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4 backdrop-blur-xl"
-          >
-            <p className="text-sm text-indigo-300 font-medium mb-2">Demo Credentials:</p>
-            <p className="text-xs text-slate-400 font-mono">demo@platinum-edge.ca</p>
-            <p className="text-xs text-slate-400 font-mono">demo123!</p>
-          </motion.div>
         </motion.div>
       </div>
     </div>
