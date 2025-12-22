@@ -2,30 +2,11 @@ import axios from 'axios';
 
 // Base API URL - Update this with your backend URL
 // Backend routes are mounted at /api/v1, so the base URL must include /api/v1
-const API_BASE_URL = import.meta.env.VITE_API_SERVER || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
-
-// Ensure the base URL includes /api/v1
-const normalizedBaseURL = API_BASE_URL.endsWith('/api/v1') 
-  ? API_BASE_URL 
-  : API_BASE_URL.endsWith('/api') 
-    ? `${API_BASE_URL}/v1`
-    : API_BASE_URL.endsWith('/v1')
-      ? API_BASE_URL.replace('/v1', '/api/v1')
-      : `${API_BASE_URL.replace(/\/$/, '')}/api/v1`;
-
-// Warn if using default (only in development)
-if (import.meta.env.DEV) {
-  console.log('🔧 API Configuration:');
-  console.log(`   Raw API Base URL: ${API_BASE_URL}`);
-  console.log(`   Normalized API Base URL: ${normalizedBaseURL}`);
-  if (!import.meta.env.VITE_API_SERVER && !import.meta.env.VITE_API_BASE_URL) {
-    console.warn('⚠️ Using default API URL. For production, set VITE_API_SERVER or VITE_API_BASE_URL in your .env file');
-  }
-}
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: normalizedBaseURL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
